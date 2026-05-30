@@ -118,28 +118,24 @@
                     <p>Nenhuma subnota nesta nota</p>
                 </div>
             </section>
+
+            <!-- Subnote Full Editor View (Expandir) -->
+            <section id="view-subnote-editor" class="view">
+                <div class="subnote-full-editor">
+                    <div class="subnote-editor-badge" id="subnote-editor-badge">Subnota 1</div>
+                    <input id="subnote-editor-title" type="text" class="note-title-input" placeholder="Título da subnota..." maxlength="100">
+                    <div class="subnote-editor-separator"></div>
+                    <div id="subnote-editor-content" class="note-content-area" contenteditable="true" data-placeholder="Conteúdo da subnota..."></div>
+                    <div class="subnote-editor-footer">
+                        <button class="modal-btn secondary" onclick="cancelSubnoteEditor()">Cancelar</button>
+                        <button class="modal-btn primary" onclick="saveSubnoteEditor()">Salvar</button>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
-    <!-- Subnote Edit Modal -->
-    <div id="subnote-modal" class="modal-overlay hidden">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>Editar Subnota</h3>
-                <button class="modal-close" onclick="closeSubnoteModal()">
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                        <path d="M4 4L14 14M14 4L4 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                </button>
-            </div>
-            <input id="subnote-title-input" type="text" class="subnote-title-input" placeholder="Título da subnota..." maxlength="60">
-            <textarea id="subnote-content-input" class="subnote-content-input" placeholder="Conteúdo da subnota..." rows="6"></textarea>
-            <div class="modal-actions">
-                <button class="modal-btn secondary" onclick="closeSubnoteModal()">Cancelar</button>
-                <button class="modal-btn primary" onclick="saveSubnoteFromModal()">Salvar</button>
-            </div>
-        </div>
-    </div>
+    <!-- Subnote Edit Modal removed: now uses full editor view -->
 
     <!-- Delete Confirmation Modal -->
     <div id="delete-modal" class="modal-overlay hidden">
