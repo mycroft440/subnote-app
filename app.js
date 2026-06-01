@@ -2,8 +2,7 @@
    SubNote App - Core Logic v2
    Auto-numbered subnotes, Minimize/Expandir buttons
    ======================================== */
-
-// State Management
+ 
 const AppState = {
     notes: [],
     currentNoteId: null,
@@ -22,7 +21,7 @@ const DOM = {
     viewSubnoteEditor: document.getElementById('view-subnote-editor'),
     notesList: document.getElementById('notes-list'),
     emptyState: document.getElementById('empty-state'),
-    noteTitleInput: document.getElementById('note-title-input'),
+    noteTitleInput: document.getElementById('header-title-input'),
     noteContentArea: document.getElementById('note-content-area'),
     headerTitle: document.getElementById('header-title'),
     btnBack: document.getElementById('btn-back'),
@@ -105,7 +104,7 @@ function saveToStorage() {
     if (AppState.currentNoteId && AppState.currentView === 'note-editor') {
         const note = getNoteById(AppState.currentNoteId);
         if (note) {
-            note.title = DOM.noteTitleInput.value.trim() || 'Sem título';
+            note.title = DOM.noteTitleInput.value.trim() || generateAutoTitle(note);
             syncContentToNote(note);
             note.updatedAt = Date.now();
         }
@@ -148,7 +147,6 @@ function syncContentToNote(note) {
 }
 
 function restoreContentFromNote(note) {
-    DOM.noteTitleInput.value = note.title === 'Sem título' ? '' : note.title;
     DOM.noteContentArea.innerHTML = note.htmlContent || '';
     
     DOM.noteContentArea.querySelectorAll('.subnote-inline').forEach(el => {
@@ -165,40 +163,57 @@ function switchView(viewName) {
     if (AppState.currentView === 'note-editor' && AppState.currentNoteId) {
         const note = getNoteById(AppState.currentNoteId);
         if (note) {
-            note.title = DOM.noteTitleInput.value.trim() || 'Sem título';
+            const titleVal = DOM.noteTitleInput.value.trim();
+            note.title = titleVal || generateAutoTitle(note);
             syncContentToNote(note);
             note.updatedAt = Date.now();
             saveToStorage();
         }
+        // Restore header to h1 mode
+        DOM.noteTitleInput.classList.add('hidden');
+        DOM.headerTitle.classList.remove('hidden');
     }
 
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    
+
     switch (viewName) {
         case 'notes-list':
             DOM.viewNotesList.classList.add('active');
             DOM.headerTitle.textContent = 'SubNote';
+            DOM.headerTitle.style.display = '';
+            DOM.headerTitle.classList.remove('hidden');
+            DOM.noteTitleInput.classList.add('hidden');
             DOM.btnBack.classList.add('hidden');
             DOM.btnNewNote.classList.remove('hidden');
             AppState.currentNoteId = null;
             renderNotesList();
             break;
-            
+
         case 'note-editor':
             DOM.viewNoteEditor.classList.add('active');
             DOM.btnBack.classList.remove('hidden');
             DOM.btnNewNote.classList.add('hidden');
             const note = getNoteById(AppState.currentNoteId);
             if (note) {
-                DOM.headerTitle.textContent = note.title || 'Sem título';
+                const isAutoTitle = /^\d{2}-\d{2}-\d{2} nota \d+$/.test(note.title);
+                const displayTitle = (!note.title || note.title === 'Sem título' || isAutoTitle) ? '' : note.title;
+                DOM.noteTitleInput.value = displayTitle;
+                DOM.noteTitleInput.placeholder = generateAutoTitle(note);
                 restoreContentFromNote(note);
             }
+            // Show ONLY the input, hide h1 completely
+            DOM.headerTitle.style.display = 'none';
+            DOM.headerTitle.classList.add('hidden');
+            DOM.noteTitleInput.classList.remove('hidden');
             break;
-            
+
         case 'all-subnotes':
             DOM.viewAllSubnotes.classList.add('active');
             DOM.btnBack.classList.remove('hidden');
             DOM.btnNewNote.classList.add('hidden');
+            DOM.headerTitle.style.display = '';
+            DOM.headerTitle.classList.remove('hidden');
+            DOM.noteTitleInput.classList.add('hidden');
             DOM.headerTitle.textContent = 'Subnotas';
             renderAllSubnotes();
             break;
@@ -207,10 +222,13 @@ function switchView(viewName) {
             DOM.viewSubnoteEditor.classList.add('active');
             DOM.btnBack.classList.remove('hidden');
             DOM.btnNewNote.classList.add('hidden');
+            DOM.headerTitle.style.display = '';
+            DOM.headerTitle.classList.remove('hidden');
+            DOM.noteTitleInput.classList.add('hidden');
             DOM.headerTitle.textContent = 'Editar Subnota';
             break;
     }
-    
+
     AppState.currentView = viewName;
 }
 
@@ -244,7 +262,8 @@ function createNewNote() {
     AppState.currentNoteId = note.id;
     saveToStorage();
     switchView('note-editor');
-    DOM.noteTitleInput.focus();
+    // Focus on title input for new notes
+    setTimeout(() => DOM.noteTitleInput.focus(), 100);
 }
 
 function openNote(noteId) {
@@ -295,7 +314,7 @@ function renderNotesList() {
         const preview = note.textContent ? note.textContent.substring(0, 100) : 'Nota vazia...';
         
         card.innerHTML = `
-            <div class="note-card-title">${escapeHtml(note.title || 'Sem título')}</div>
+            <div class="note-card-title">${escapeHtml(getDisplayTitle(note))}</div>
             <div class="note-card-preview">${escapeHtml(preview)}</div>
             <div class="note-card-meta">
                 <span>${formatDate(note.updatedAt)}</span>
@@ -552,7 +571,8 @@ function cancelSubnoteEditor() {
 function showAllSubnotes() {
     const note = getNoteById(AppState.currentNoteId);
     if (note) {
-        note.title = DOM.noteTitleInput.value.trim() || 'Sem título';
+        const titleVal = DOM.noteTitleInput.value.trim();
+        note.title = titleVal || generateAutoTitle(note);
         syncContentToNote(note);
     }
     switchView('all-subnotes');
@@ -680,14 +700,7 @@ function autoSave() {
 // Event Listeners
 // ========================================
 
-// Auto-save on title change
-DOM.noteTitleInput.addEventListener('input', () => {
-    const note = getNoteById(AppState.currentNoteId);
-    if (note) {
-        DOM.headerTitle.textContent = DOM.noteTitleInput.value.trim() || 'Sem título';
-    }
-    autoSave();
-});
+// Title input is now handled in Header Title Editing section
 
 // Auto-save on content change
 DOM.noteContentArea.addEventListener('input', () => {
@@ -749,6 +762,103 @@ function getNextSibling(range) {
 setTimeout(() => {
     if (DOM.splash) DOM.splash.remove();
 }, 2200);
+
+// ========================================
+// Auto Title Generation & Title Input
+// ========================================
+
+function generateAutoTitle(note) {
+    const d = new Date(note.createdAt);
+    const yy = String(d.getFullYear()).slice(-2);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const dateStr = `${yy}-${mm}-${dd}`;
+
+    // Count notes created on the same date, sorted by creation time
+    const sameDateNotes = AppState.notes.filter(n => {
+        const nd = new Date(n.createdAt);
+        return nd.getFullYear() === d.getFullYear() &&
+               nd.getMonth() === d.getMonth() &&
+               nd.getDate() === d.getDate();
+    }).sort((a, b) => a.createdAt - b.createdAt);
+
+    const index = sameDateNotes.findIndex(n => n.id === note.id) + 1;
+    const num = String(index > 0 ? index : sameDateNotes.length + 1).padStart(2, '0');
+    return `${dateStr} nota ${num}`;
+}
+
+function getDisplayTitle(note) {
+    if (note.title && note.title !== 'Sem título') {
+        return note.title;
+    }
+    return generateAutoTitle(note);
+}
+
+// Auto-save when title input changes
+DOM.noteTitleInput.addEventListener('input', () => {
+    autoSave();
+});
+
+// Focus content area on Enter from title
+DOM.noteTitleInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        DOM.noteContentArea.focus();
+    }
+});
+
+// ========================================
+// Swipe Gesture: Right-to-Left to view Subnotes
+// ========================================
+
+let swipeStartX = 0;
+let swipeStartY = 0;
+let swipeTracking = false;
+
+DOM.viewNoteEditor.addEventListener('touchstart', (e) => {
+    swipeStartX = e.touches[0].clientX;
+    swipeStartY = e.touches[0].clientY;
+    swipeTracking = true;
+}, { passive: true });
+
+DOM.viewNoteEditor.addEventListener('touchmove', (e) => {
+    if (!swipeTracking) return;
+}, { passive: true });
+
+DOM.viewNoteEditor.addEventListener('touchend', (e) => {
+    if (!swipeTracking) return;
+    swipeTracking = false;
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const diffX = swipeStartX - endX;
+    const diffY = Math.abs(swipeStartY - endY);
+    // Swipe left (right-to-left) with min 80px and more horizontal than vertical
+    if (diffX > 80 && diffY < diffX * 0.7) {
+        showAllSubnotes();
+    }
+});
+
+// Mouse drag swipe for desktop testing
+let mouseSwipeStartX = 0;
+let mouseSwipeStartY = 0;
+let mouseSwipeTracking = false;
+
+DOM.viewNoteEditor.addEventListener('mousedown', (e) => {
+    if (e.target.closest('.subnote-inline') || e.target.closest('.toolbar-btn')) return;
+    mouseSwipeStartX = e.clientX;
+    mouseSwipeStartY = e.clientY;
+    mouseSwipeTracking = true;
+});
+
+document.addEventListener('mouseup', (e) => {
+    if (!mouseSwipeTracking) return;
+    mouseSwipeTracking = false;
+    const diffX = mouseSwipeStartX - e.clientX;
+    const diffY = Math.abs(mouseSwipeStartY - e.clientY);
+    if (diffX > 80 && diffY < diffX * 0.7 && AppState.currentView === 'note-editor') {
+        showAllSubnotes();
+    }
+});
 
 // ========================================
 // Init

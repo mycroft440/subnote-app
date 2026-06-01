@@ -194,6 +194,35 @@ body {
     -webkit-text-fill-color: transparent;
     background-clip: text;
     letter-spacing: -0.3px;
+    transition: opacity var(--transition-fast);
+}
+
+.header-title-input {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    outline: none;
+    font-family: var(--font-sans);
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.3px;
+    padding: 4px 2px;
+    width: 100%;
+    max-width: 280px;
+    transition: border-color var(--transition-fast);
+    caret-color: var(--accent-primary);
+}
+
+.header-title-input:focus {
+    border-bottom-color: var(--accent-primary);
+}
+
+.header-title-input::placeholder {
+    color: var(--text-muted);
+    font-weight: 500;
+    font-size: 1rem;
+    opacity: 0.6;
 }
 
 .header-btn {
@@ -985,4 +1014,33 @@ body {
 
 .animate-in {
     animation: fadeInUp 0.3s ease forwards;
+}
+
+/* ========================================
+   Swipe Hint Indicator
+   ======================================== */
+.swipe-hint {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 60px;
+    background: linear-gradient(180deg, transparent, var(--accent-tertiary), transparent);
+    border-radius: 4px 0 0 4px;
+    opacity: 0;
+    animation: swipeHintPulse 3s ease-in-out infinite;
+    animation-delay: 2s;
+    pointer-events: none;
+}
+
+@keyframes swipeHintPulse {
+    0%, 100% { opacity: 0; transform: translateY(-50%) translateX(0); }
+    30% { opacity: 0.5; transform: translateY(-50%) translateX(-6px); }
+    60% { opacity: 0.3; transform: translateY(-50%) translateX(-3px); }
+}
+
+/* Hidden utility */
+.hidden {
+    display: none !important;
 }
